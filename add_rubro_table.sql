@@ -1,0 +1,9 @@
+CREATE TABLE IF NOT EXISTS rubro (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+ALTER TABLE detalles ADD COLUMN rubro_id INT AFTER descripcion;
+ALTER TABLE detalles ADD FOREIGN KEY (rubro_id) REFERENCES rubro(id);
