@@ -1,6 +1,6 @@
 <?php
 error_reporting(E_ALL);
-ini_set('display_errors', 1);
+ini_set('display_errors', 0);
 
 // imprimir_factura_pdf.php
 // Requiere: composer require setasign/fpdf setasign/fpdi
@@ -13,9 +13,6 @@ if (!isset($_GET['factura_id'])) {
     die('Falta el parámetro factura_id');
 }
 $factura_id = intval($_GET['factura_id']);
-
-// Debug: mostrar el ID de factura que estamos buscando
-
 
 // Obtener datos de la factura y la empresa
 $sql = "SELECT f.*, e.modelo_pdf, e.nombre AS empresa_nombre, e.cuit AS empresa_cuit 
@@ -38,57 +35,75 @@ if (!$stmt->execute()) {
 
 $result = $stmt->get_result();
 
-// Debug: mostrar cuántos resultados encontramos
-
-
 if (!$row = $result->fetch_assoc()) {
     die('Factura no encontrada. ID: ' . $factura_id . '. Verifique que la factura existe y tiene una empresa asociada.');
 }
 
-// Debug: mostrar datos encontrados
-
-
-$modelo_pdf = $row['modelo_pdf'];
-if (!$modelo_pdf || !file_exists(__DIR__ . '/' . $modelo_pdf)) {
-    die('Modelo PDF no encontrado. Ruta buscada: ' . __DIR__ . '/' . $modelo_pdf);
-}
-
+// Crear PDF
 $pdf = new Fpdi();
 $pdf->AddPage();
-$pdf->setSourceFile(__DIR__ . '/' . $modelo_pdf);
-$tplIdx = $pdf->importPage(1);
-$pdf->useTemplate($tplIdx, 0, 0, 210);
+
+// Intentar cargar el modelo PDF si existe
+$modelo_pdf = $row['modelo_pdf'];
+$modelo_cargado = false;
+
+if ($modelo_pdf && file_exists(__DIR__ . '/' . $modelo_pdf)) {
+    try {
+        $pdf->setSourceFile(__DIR__ . '/' . $modelo_pdf);
+        $tplIdx = $pdf->importPage(1);
+        $pdf->useTemplate($tplIdx, 0, 0, 210);
+        $modelo_cargado = true;
+    } catch (Exception $e) {
+        // Si hay error (por ejemplo, PDF encriptado), continuar sin modelo
+        error_log('Error al cargar PDF modelo: ' . $e->getMessage());
+        $modelo_cargado = false;
+        // Crear una nueva página en blanco
+        $pdf = new Fpdi();
+        $pdf->AddPage();
+    }
+}
 
 // Escribir datos
 $pdf->SetFont('Arial', '', 12);
 $pdf->SetTextColor(0,0,0);
 
+// Mostrar advertencia si el modelo no se cargó
+if (!$modelo_cargado && $modelo_pdf) {
+    $pdf->SetTextColor(255,0,0);
+    $pdf->SetFont('Arial', 'B', 10);
+    $pdf->SetXY(20, 20);
+    $pdf->MultiCell(0, 5, 'ADVERTENCIA: El PDF modelo no pudo cargarse. Se genera un PDF simple.');
+    $pdf->SetTextColor(0,0,0);
+    $pdf->SetFont('Arial', '', 10);
+    $pdf->SetXY(20, 40);
+}
+
 // Datos de la empresa
-$pdf->SetXY(20, 20);
+$pdf->SetXY(20, ($modelo_cargado ? 20 : 50));
 $pdf->Write(0, $row['empresa_nombre']);
-$pdf->SetXY(20, 28);
+$pdf->SetXY(20, ($modelo_cargado ? 28 : 58));
 $pdf->Write(0, $row['empresa_cuit']);
 
 // Número y fecha de factura
-$pdf->SetXY(150, 20);
+$pdf->SetXY(150, ($modelo_cargado ? 20 : 50));
 $pdf->Write(0, $row['numero_factura']);
-$pdf->SetXY(150, 28);
+$pdf->SetXY(150, ($modelo_cargado ? 28 : 58));
 $pdf->Write(0, $row['fecha']);
 
 // Datos del cliente
-$pdf->SetXY(20, 40);
+$pdf->SetXY(20, ($modelo_cargado ? 40 : 70));
 $pdf->Write(0, 'Cliente: ' . $row['cliente_nombre']);
-$pdf->SetXY(20, 48);
+$pdf->SetXY(20, ($modelo_cargado ? 48 : 78));
 $pdf->Write(0, 'CUIT: ' . $row['cliente_cuit']);
-$pdf->SetXY(20, 56);
+$pdf->SetXY(20, ($modelo_cargado ? 56 : 86));
 $pdf->Write(0, 'Domicilio: ' . $row['cliente_domicilio']);
 
 // Totales
-$pdf->SetXY(150, 100);
+$pdf->SetXY(150, ($modelo_cargado ? 100 : 110));
 $pdf->Write(0, 'Subtotal: $' . number_format($row['subtotal'], 2, ',', '.'));
-$pdf->SetXY(150, 108);
+$pdf->SetXY(150, ($modelo_cargado ? 108 : 118));
 $pdf->Write(0, 'IVA: $' . number_format($row['iva'], 2, ',', '.'));
-$pdf->SetXY(150, 116);
+$pdf->SetXY(150, ($modelo_cargado ? 116 : 126));
 $pdf->SetFont('Arial', 'B', 12);
 $pdf->Write(0, 'Total: $' . number_format($row['total'], 2, ',', '.'));
 

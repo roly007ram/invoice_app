@@ -469,9 +469,17 @@ if (!isset($_SESSION['usuario_id'])) {
                 </div>
                 <div class="modal-body">
                     <button class="btn btn-primary btn-sm mb-3" onclick="showEmpresaForm()">Nueva Empresa</button>
+                    <button class="btn btn-warning btn-sm mb-3 ms-2" onclick="exportarEmpresasExcel()">Exportar Excel</button>
                     <!-- Buscador por nombre o CUIT -->
-                    <div class="mb-2">
-                        <input type="text" class="form-control form-control-sm" id="buscarEmpresa" placeholder="Buscar por nombre o CUIT...">
+                    <div class="row mb-2">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control form-control-sm" id="buscarEmpresa" placeholder="Buscar por nombre o CUIT...">
+                        </div>
+                        <div class="col-md-4">
+                            <select class="form-select form-select-sm" id="filtroEmpresaTipoFac" onchange="loadEmpresas()">
+                                <option value="">Todos los tipos</option>
+                            </select>
+                        </div>
                     </div>
                     <div id="empresaFormContainer" style="display:none;">
                         <h5><span id="empresaFormTitle"></span> Empresa</h5>
@@ -483,6 +491,11 @@ if (!isset($_SESSION['usuario_id'])) {
                             <div class="mb-3"><label>Código Postal:</label><input type="text" class="form-control form-control-sm" id="empresaCodigoPostalCrud" name="codigo_postal"></div>
                             <div class="mb-3"><label>Tipo Contribuyente:</label><input type="text" class="form-control form-control-sm" id="empresaTipoContribuyenteCrud" name="tipo_contribuyente"></div>
                             <div class="mb-3"><label>Actividad:</label><input type="text" class="form-control form-control-sm" id="empresaActividadCrud" name="actividad"></div>
+                            <div class="mb-3"><label>Tipo de Factura:</label>
+                                <select class="form-select form-select-sm" id="empresaTipoFacCrud" name="tipo_fac">
+                                    <option value="">Seleccione tipo...</option>
+                                </select>
+                            </div>
                             <div class="mb-3"><label>CUIT:</label><input type="text" class="form-control form-control-sm" id="empresaCuitCrud" name="cuit"></div>
                             <div class="mb-3"><label>Ingresos Brutos:</label><input type="text" class="form-control form-control-sm" id="empresaIngresosBrutosCrud" name="ingresos_brutos"></div>
                             <div class="mb-3"><label>Inicio Actividad:</label><input type="date" class="form-control form-control-sm" id="empresaInicioActividadCrud" name="inicio_actividad"></div>
@@ -501,11 +514,12 @@ if (!isset($_SESSION['usuario_id'])) {
                     </div>
                     <div id="empresaListContainer">
                         <h5>Empresas Existentes</h5>
-                        <table class="table table-bordered table-striped table-sm">
+                        <table id="empresasTable" class="table table-bordered table-striped table-sm">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
                                     <th>CUIT</th>
+                                    <th>Tipo Factura</th>
                                     <th>Actividad</th>
                                     <th>Acciones</th>
                                 </tr>
@@ -1531,7 +1545,33 @@ if (!isset($_SESSION['usuario_id'])) {
         // --- Empresa CRUD Functions ---
 
         function loadEmpresas() {
-            fetch('get_empresas.php')
+            // Populate tipo_fac select options (static set)
+            const tipos = ['Tique', 'Electrónica', 'Offline', 'Modelo PDF'];
+            const filtroSelect = document.getElementById('filtroEmpresaTipoFac');
+            const empresaTipoSelect = document.getElementById('empresaTipoFacCrud');
+            if (filtroSelect && empresaTipoSelect) {
+                // fill both selects only if empty
+                if (!filtroSelect.dataset.filled) {
+                    tipos.forEach(t => {
+                        const opt = document.createElement('option'); opt.value = t; opt.textContent = t; filtroSelect.appendChild(opt);
+                    });
+                    filtroSelect.dataset.filled = 'true';
+                }
+                if (!empresaTipoSelect.dataset.filled) {
+                    tipos.forEach(t => {
+                        const opt = document.createElement('option'); opt.value = t; opt.textContent = t; empresaTipoSelect.appendChild(opt);
+                    });
+                    empresaTipoSelect.dataset.filled = 'true';
+                }
+            }
+
+            // Apply tipo_fac filter in fetch
+            let url = 'get_empresas.php';
+            const filtroTipo = document.getElementById('filtroEmpresaTipoFac');
+            if (filtroTipo && filtroTipo.value) {
+                url += '?tipo_fac=' + encodeURIComponent(filtroTipo.value);
+            }
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     const tbody = document.getElementById('empresasTableBody');
@@ -1541,6 +1581,7 @@ if (!isset($_SESSION['usuario_id'])) {
                             const tr = document.createElement('tr');
                             const tdNombre = document.createElement('td'); tdNombre.textContent = empresa.nombre || '';
                             const tdCuit = document.createElement('td'); tdCuit.textContent = empresa.cuit || '';
+                            const tdTipo = document.createElement('td'); tdTipo.textContent = empresa.tipo_fac || '';
                             const tdActividad = document.createElement('td'); tdActividad.textContent = empresa.actividad || '';
                             const tdAcciones = document.createElement('td');
 
@@ -1564,6 +1605,7 @@ if (!isset($_SESSION['usuario_id'])) {
 
                             tr.appendChild(tdNombre);
                             tr.appendChild(tdCuit);
+                            tr.appendChild(tdTipo);
                             tr.appendChild(tdActividad);
                             tr.appendChild(tdAcciones);
                             tbody.appendChild(tr);
@@ -1667,6 +1709,8 @@ if (!isset($_SESSION['usuario_id'])) {
                     document.getElementById('empresaCodigoBarraCaiCrud').value = empresa.codigo_barra_cai;
                     document.getElementById('empresaFechaVencimientoCaiCrud').value = empresa.fecha_vencimiento_cai;
                     document.getElementById('modelo_pdf_actual').value = empresa.modelo_pdf;
+                    // Tipo de factura
+                    document.getElementById('empresaTipoFacCrud').value = empresa.tipo_fac || '';
 
                     // Mostrar el formulario en modo edición dentro del modal
                     showEmpresaForm(true);
@@ -1952,8 +1996,16 @@ if (!isset($_SESSION['usuario_id'])) {
 
         function loadDetalles() {
             // Cargar los rubros primero para el filtro y el select del formulario
-            fetch('get_rubros.php')
-                .then(response => response.json())
+            return fetch('get_rubros.php')
+                .then(response => {
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            return []; // Si no existe el archivo o la tabla, devolver array vacío
+                        }
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(rubros => {
                     const filtroRubro = document.getElementById('filtroRubro');
                     const selectRubro = document.getElementById('detalleRubroCrud');
@@ -1962,7 +2014,7 @@ if (!isset($_SESSION['usuario_id'])) {
                     filtroRubro.innerHTML = '<option value="">Todos los rubros</option>';
                     selectRubro.innerHTML = '<option value="">Seleccione un rubro...</option>';
 
-                    if (Array.isArray(rubros)) {
+                    if (Array.isArray(rubros) && rubros.length > 0) {
                         rubros.forEach(rubro => {
                             // Agregar al filtro
                             const optionFiltro = document.createElement('option');
@@ -1977,11 +2029,10 @@ if (!isset($_SESSION['usuario_id'])) {
                             selectRubro.appendChild(optionSelect);
                         });
                     }
+                    
+                    // Ahora cargar los detalles después de que los rubros estén cargados
+                    return fetch('get_detalles.php');
                 })
-                .catch(error => console.error('Error al cargar rubros:', error));
-
-            // Cargar los detalles
-            fetch('get_detalles.php')
                 .then(response => {
                     if (!response.ok) {
                         return response.text().then(text => { throw new Error(`HTTP ${response.status}: ${text}`); });
@@ -2165,7 +2216,29 @@ if (!isset($_SESSION['usuario_id'])) {
         // --- Event Listeners and Initial Load ---
 
         document.getElementById('empresaModal').addEventListener('shown.bs.modal', function () {
-            loadEmpresas();
+            // Load tipo_fac options dynamically and then companies
+            fetch('get_tipo_fac.php')
+                .then(r => r.json())
+                .then(types => {
+                    const filtro = document.getElementById('filtroEmpresaTipoFac');
+                    const tipoSel = document.getElementById('empresaTipoFacCrud');
+                    if (filtro) {
+                        // keep default
+                    }
+                    // fill both selects
+                    if (Array.isArray(types)) {
+                        types.forEach(t => {
+                            if (!Array.from(filtro.options).some(o => o.value === t)) {
+                                const opt = document.createElement('option'); opt.value = t; opt.textContent = t; filtro.appendChild(opt);
+                            }
+                            if (!Array.from(tipoSel.options).some(o => o.value === t)) {
+                                const opt2 = document.createElement('option'); opt2.value = t; opt2.textContent = t; tipoSel.appendChild(opt2);
+                            }
+                        });
+                    }
+                    loadEmpresas();
+                })
+                .catch(e => { console.error('Error al cargar tipos de factura:', e); loadEmpresas(); });
             hideEmpresaForm(); // Ensure form is hidden on modal open inicialmente
             // Limpiar búsqueda y aplicar filtro tras cargar
             const inp = document.getElementById('buscarEmpresa');
@@ -2188,41 +2261,6 @@ if (!isset($_SESSION['usuario_id'])) {
 
         // Cargar productos/servicios al abrir el modal de detalles
         document.getElementById('detalleModal').addEventListener('shown.bs.modal', function () {
-            // Cargar los rubros para el filtro y el formulario
-            fetch('get_rubros.php')
-                .then(response => {
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            return []; // Si no existe el archivo o la tabla, devolver array vacío
-                        }
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(rubros => {
-                    const filtroRubro = document.getElementById('filtroRubro');
-                    const selectRubro = document.getElementById('detalleRubroCrud');
-
-                    // Limpiar los selects
-                    filtroRubro.innerHTML = '<option value="">Todos los rubros</option>';
-                    selectRubro.innerHTML = '<option value="">Seleccione un rubro...</option>';                    if (Array.isArray(rubros)) {
-                        rubros.forEach(rubro => {
-                            // Agregar opción al filtro
-                            const optionFiltro = document.createElement('option');
-                            optionFiltro.value = rubro.id;
-                            optionFiltro.textContent = rubro.nombre;
-                            filtroRubro.appendChild(optionFiltro);
-
-                            // Agregar opción al select del formulario
-                            const optionSelect = document.createElement('option');
-                            optionSelect.value = rubro.id;
-                            optionSelect.textContent = rubro.nombre;
-                            selectRubro.appendChild(optionSelect);
-                        });
-                    }
-                })
-                .catch(error => console.error('Error al cargar rubros:', error));
-
             loadDetalles();
             hideDetalleForm();
             // Mantener habilitado el botón de nuevo producto/servicio
@@ -2307,7 +2345,9 @@ if (!isset($_SESSION['usuario_id'])) {
                 if (celdas.length > 0) {
                     const nombre = celdas[0] ? celdas[0].textContent.toLowerCase() : '';
                     const cuit = celdas[1] ? celdas[1].textContent.toLowerCase() : '';
-                    if (filtro === '' || nombre.includes(filtro) || cuit.includes(filtro)) {
+                    const tipo = celdas[2] ? celdas[2].textContent.toLowerCase() : '';
+                    const tipoFiltro = (document.getElementById('filtroEmpresaTipoFac') && document.getElementById('filtroEmpresaTipoFac').value) ? document.getElementById('filtroEmpresaTipoFac').value.toLowerCase() : '';
+                    if ((filtro === '' || nombre.includes(filtro) || cuit.includes(filtro)) && (tipoFiltro === '' || tipo.includes(tipoFiltro))) {
                         fila.style.display = '';
                     } else {
                         fila.style.display = 'none';
@@ -2739,6 +2779,38 @@ function exportarMovimientosExcel() {
             }
             var fecha = new Date().toISOString().slice(0, 10);
             var nombreArchivo = 'CuentaCorriente_' + cliente + '_' + fecha + '.xlsx';
+            XLSX.writeFile(wb, nombreArchivo);
+        } catch (e) {
+            console.error('Error exportando Excel:', e);
+            alert('No se pudo exportar a Excel.');
+        }
+    }
+
+    if (window.XLSX) {
+        doExport();
+    } else {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+        script.onload = doExport;
+        script.onerror = function() {
+            alert('No se pudo cargar la librería de Excel.');
+        };
+        document.body.appendChild(script);
+    }
+}
+// Exporta la tabla de empresas a un archivo Excel (.xlsx)
+function exportarEmpresasExcel() {
+    var table = document.getElementById('empresasTable');
+    if (!table) {
+        alert('La tabla de empresas no está disponible.');
+        return;
+    }
+
+    function doExport() {
+        try {
+            var wb = XLSX.utils.table_to_book(table, { sheet: 'Empresas' });
+            var fecha = new Date().toISOString().slice(0, 10);
+            var nombreArchivo = 'Empresas_' + fecha + '.xlsx';
             XLSX.writeFile(wb, nombreArchivo);
         } catch (e) {
             console.error('Error exportando Excel:', e);

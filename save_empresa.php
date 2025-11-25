@@ -1,4 +1,9 @@
 <?php
+// Configurar manejo de errores y salida
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+
 // Incluye el archivo de configuración de la base de datos
 require_once('db_config.php');
 
@@ -6,7 +11,7 @@ require_once('db_config.php');
 ob_start();
 
 // Establece el tipo de contenido de la respuesta como JSON
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=utf-8');
 
 // Función de logging mejorada
 function log_error($message, $data = null) {
@@ -33,7 +38,7 @@ function _save_empresa_log($m) {
 _save_empresa_log('Invocado: ' . $_SERVER['REQUEST_METHOD']);
 _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
 
-    // Verifica si la solicitud es de tipo POST
+try {
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Permitir subida de archivos
         if (!empty($_FILES['modelo_pdf']) && $_FILES['modelo_pdf']['error'] === UPLOAD_ERR_OK) {
@@ -79,6 +84,7 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
             $tipo_contribuyente = mysqli_real_escape_string($conn, $_POST['tipo_contribuyente'] ?? '');
             $actividad = mysqli_real_escape_string($conn, $_POST['actividad'] ?? '');
             $cuit = mysqli_real_escape_string($conn, $_POST['cuit'] ?? '');
+            $tipo_fac = mysqli_real_escape_string($conn, $_POST['tipo_fac'] ?? '');
             $ingresos_brutos = mysqli_real_escape_string($conn, $_POST['ingresos_brutos'] ?? '');
             // Manejo especial para las fechas
             $inicio_actividad = !empty($_POST['inicio_actividad']) ?
@@ -120,6 +126,7 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
                 codigo_postal=?,
                 tipo_contribuyente=?,
                 actividad=?,
+                tipo_fac=?,
                 cuit=?,
                 ingresos_brutos=?,
                 inicio_actividad=NULLIF(?, ''),
@@ -137,12 +144,13 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
                 exit;
             }
             // Vincula los parámetros a la consulta de actualización
-            if (!$stmt->bind_param("ssssssssssssi",
+            if (!$stmt->bind_param("sssssssssssssi",
                 $nombre,
                 $direccion,
                 $codigo_postal,
                 $tipo_contribuyente,
                 $actividad,
+                $tipo_fac,
                 $cuit,
                 $ingresos_brutos,
                 $inicio_actividad,
@@ -167,6 +175,7 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
                 codigo_postal,
                 tipo_contribuyente,
                 actividad,
+                tipo_fac,
                 cuit,
                 ingresos_brutos,
                 inicio_actividad,
@@ -190,12 +199,13 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
                 exit;
             }
             // Vincula los parámetros a la consulta de inserción
-            if (!$stmt->bind_param("ssssssssssss",
+            if (!$stmt->bind_param("sssssssssssss",
                 $nombre,
                 $direccion,
                 $codigo_postal,
                 $tipo_contribuyente,
                 $actividad,
+                $tipo_fac,
                 $cuit,
                 $ingresos_brutos,
                 $inicio_actividad,
@@ -244,6 +254,18 @@ _save_empresa_log('POST keys: ' . json_encode(array_keys($_POST)));
     }
 } else {
     // Si la solicitud no es POST, devuelve un error
+    ob_clean();
     echo json_encode(['success' => false, 'error' => 'Método de solicitud inválido.']);
 }
+
+} catch (Throwable $e) {
+    // Catch global para cualquier error no capturado
+    log_error('Error global no capturado:', $e->getMessage());
+    ob_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Error interno del servidor: ' . $e->getMessage()]);
+}
+
+// Limpiar y enviar buffer
+ob_end_flush();
 ?>

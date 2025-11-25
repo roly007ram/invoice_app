@@ -9,6 +9,11 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    // Si ya se está devolviendo JSON, devolverlo también aquí
+    if (!headers_sent()) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(500);
+    }
+    die(json_encode(['success' => false, 'error' => 'Error de conexión: ' . $conn->connect_error]));
 }
 ?>

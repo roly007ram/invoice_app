@@ -6,8 +6,21 @@ require_once('db_config.php');
 header('Content-Type: application/json');
 
 // Consulta SQL para seleccionar todas las empresas
-$sql = "SELECT * FROM empresas ORDER BY nombre ASC";
-$result = $conn->query($sql);
+$tipo_fac = isset($_GET['tipo_fac']) ? trim($_GET['tipo_fac']) : '';
+
+if ($tipo_fac !== '') {
+    $stmt = $conn->prepare("SELECT * FROM empresas WHERE tipo_fac = ? ORDER BY nombre ASC");
+    if ($stmt) {
+        $stmt->bind_param('s', $tipo_fac);
+        $stmt->execute();
+        $result = $stmt->get_result();
+    } else {
+        // Fallback to no-filter query if prepare fails
+        $result = $conn->query("SELECT * FROM empresas ORDER BY nombre ASC");
+    }
+} else {
+    $result = $conn->query("SELECT * FROM empresas ORDER BY nombre ASC");
+}
 
 $empresas = [];
 // Recorre los resultados y los añade al array de empresas
