@@ -201,6 +201,11 @@ if (!isset($_SESSION['usuario_id'])) {
                         <i class="fas fa-file-pdf"></i> Imprimir por modelo
                     </button>
                 </div>
+                <div class="col-6 mt-2">
+                    <button class="btn btn-secondary btn-sm w-100 no-print" data-bs-toggle="modal" data-bs-target="#configModeloModal">
+                        <i class="fas fa-cog"></i> Configuración de modelos
+                    </button>
+                </div>
             </div>
             <div class="mt-2">
             </div>
@@ -800,6 +805,323 @@ if (!isset($_SESSION['usuario_id'])) {
         </div>
     </div>
 
+
+    <!-- Modal y scripts para Configuración de Modelos -->
+    <div class="modal fade" id="configModeloModal" tabindex="-1" aria-labelledby="configModeloModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="configModeloModalLabel"><i class="fas fa-cog"></i> Configuración de modelos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p><strong>Empresa seleccionada:</strong> <span id="configEmpresaNombre">-</span></p>
+                            <div class="mb-2">
+                                <label class="form-label">Cargar nuevo PDF (opcional):</label>
+                                <input type="file" id="configModeloFile" class="form-control form-control-sm" accept="application/pdf">
+                                <small class="text-muted">Si sube un PDF, se usará como plantilla y se guardará en <code>pdfmodelo/</code>.</small>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Ancho de hoja (mm):</label>
+                                <select id="configPageWidth" class="form-select form-select-sm">
+                                    <option value="55">55 mm</option>
+                                    <option value="80" selected>80 mm (por defecto)</option>
+                                    <option value="210">210 mm (A4)</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Fuente:</label>
+                                <select id="configFontName" class="form-select form-select-sm">
+                                    <option value="Helvetica">Helvetica</option>
+                                    <option value="Arial">Arial</option>
+                                    <option value="Times">Times</option>
+                                    <option value="Courier">Courier</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Tamaño de fuente (pt):</label>
+                                <input type="number" id="configFontSize" class="form-control form-control-sm" value="10" min="6" max="48">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Estilo de fuente:</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="configFontBold">
+                                        <label class="form-check-label" for="configFontBold">Negrita</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="configFontItalic">
+                                        <label class="form-check-label" for="configFontItalic">Cursiva</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="checkbox" id="configFontUnderline">
+                                        <label class="form-check-label" for="configFontUnderline">Subrayado</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Variable a colocar:</label>
+                                <select id="configVariableSelect" class="form-select form-select-sm">
+                                    <option value="">-- Seleccione variable --</option>
+                                    <option value="clienteNombre">Nombre y Apellido</option>
+                                    <option value="clienteCuit">Cuit</option>
+                                    <option value="clienteDomicilio">Domicilio</option>
+                                    <option value="localidad">Localidad</option>
+                                    <option value="clienteIva">IVA</option>
+                                    <option value="condicionVenta">Cond. de venta</option>
+                                    <option value="fecha">Fecha del comprobante</option>
+                                    <option value="numeroFactura">Número comprobante</option>
+                                    <option value="cantidad">CANT.</option>
+                                    <option value="detalle">DETALLE</option>
+                                    <option value="precio_unitario">P. UNITARIO</option>
+                                    <option value="total_item">TOTAL (fila)</option>
+                                    <option value="subtotal">Sub-Total</option>
+                                    <option value="ivaTotal">IVA Total</option>
+                                    <option value="totalGeneral">TOTAL con IVA</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <button id="activarAgregarBtn" type="button" class="btn btn-sm btn-primary">Hacer clic en el PDF para colocar</button>
+                                <button id="limpiarMarcadoresBtn" type="button" class="btn btn-sm btn-outline-danger ms-2">Limpiar marcadores</button>
+                            </div>
+                            <hr>
+                            <div>
+                                <h6>Marcadores colocados</h6>
+                                <ul id="listaMarcadores" class="list-group list-group-flush" style="max-height:300px; overflow:auto;"></ul>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="pdfPreviewWrapper" style="position:relative; border:1px solid #ddd; height:700px; overflow:hidden; background:#fff;">
+                                <iframe id="pdfPreview" style="width:100%; height:100%; border:0;" src="" title="Vista previa del modelo"></iframe>
+                                <div id="pdfOverlay" style="position:absolute; left:0; top:0; right:0; bottom:0; z-index:5;">
+                                    <!-- marcadores dinámicos serán añadidos aquí -->
+                                </div>
+                            </div>
+                            <small class="text-muted">Nota: haga clic en el botón "Hacer clic en el PDF para colocar" y luego coloque la variable en la plantilla.</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="guardarConfigBtn">Guardar configuración</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal Configuración de modelos
+        let modeloConfig = { modelo_file: '', posiciones: [], _uploadedFile: null };
+        let agregarEnabled = false;
+
+        document.getElementById('configModeloModal').addEventListener('show.bs.modal', function (event) {
+            const empId = document.getElementById('selectedEmpresaId').value;
+            const empNombre = document.getElementById('displayEmpresaNombre').textContent || '-';
+            document.getElementById('configEmpresaNombre').textContent = empNombre;
+            // limpiar estado
+            modeloConfig = { modelo_file: '', posiciones: [], _uploadedFile: null };
+            document.getElementById('configModeloFile').value = '';
+            document.getElementById('configVariableSelect').value = '';
+            document.getElementById('listaMarcadores').innerHTML = '';
+            clearOverlayMarkers();
+
+            if (!empId) {
+                alert('Seleccione una empresa antes de configurar el modelo.');
+                // cerrar modal automáticamente
+                const mdl = bootstrap.Modal.getInstance(document.getElementById('configModeloModal'));
+                mdl.hide();
+                return;
+            }
+
+            // Cargar configuración existente si la hay
+            loadModeloConfig(empId);
+        });
+
+        // Manejar selección de archivo (vista previa rápida)
+        document.getElementById('configModeloFile').addEventListener('change', function(e){
+            const f = this.files && this.files[0];
+            if (!f) return;
+            if (f.type !== 'application/pdf') { alert('Solo se permiten archivos PDF.'); this.value = ''; return; }
+            modeloConfig._uploadedFile = f;
+            const url = URL.createObjectURL(f);
+            document.getElementById('pdfPreview').src = url;
+            // limpiar marcadores temporales; el usuario puede recrearlos o cargar posiciones después
+            modeloConfig.posiciones = [];
+            renderMarkers();
+        });
+
+        document.getElementById('activarAgregarBtn').addEventListener('click', function(){
+            agregarEnabled = !agregarEnabled;
+            this.textContent = agregarEnabled ? 'Modo colocar: ACTIVO (clic para desactivar)' : 'Hacer clic en el PDF para colocar';
+            this.classList.toggle('btn-success', agregarEnabled);
+        });
+
+        document.getElementById('limpiarMarcadoresBtn').addEventListener('click', function(){
+            if (!confirm('Limpiar todos los marcadores actuales?')) return;
+            modeloConfig.posiciones = [];
+            renderMarkers();
+        });
+
+        const overlay = document.getElementById('pdfOverlay');
+        overlay.addEventListener('click', function(ev){
+            if (!agregarEnabled) return;
+            const varKey = document.getElementById('configVariableSelect').value;
+            const varLabel = document.getElementById('configVariableSelect').options[document.getElementById('configVariableSelect').selectedIndex].text;
+            if (!varKey) { alert('Seleccione una variable antes de colocar.'); return; }
+            const rect = overlay.getBoundingClientRect();
+            const x = ev.clientX - rect.left; const y = ev.clientY - rect.top;
+            const xPct = (x / rect.width) * 100; const yPct = (y / rect.height) * 100;
+            modeloConfig.posiciones.push({ key: varKey, label: varLabel, xPct: xPct.toFixed(4), yPct: yPct.toFixed(4) });
+            renderMarkers();
+        });
+
+        function clearOverlayMarkers(){
+            overlay.innerHTML = '';
+        }
+
+        function renderMarkers(){
+            clearOverlayMarkers();
+            const lista = document.getElementById('listaMarcadores'); lista.innerHTML = '';
+            modeloConfig.posiciones.forEach((p, idx) => {
+                const el = document.createElement('div');
+                el.className = 'model-marker';
+                el.style.position = 'absolute';
+                el.style.left = `calc(${p.xPct}% - 8px)`;
+                el.style.top = `calc(${p.yPct}% - 8px)`;
+                el.style.width = '16px'; el.style.height = '16px'; el.style.background = '#ff5e5e'; el.style.borderRadius = '50%'; el.style.zIndex = 10;
+                el.title = p.label;
+                overlay.appendChild(el);
+
+                // Crear etiqueta de muestra con estilos configurados
+                try {
+                    const labelEl = document.createElement('div');
+                    labelEl.className = 'model-marker-label';
+                    const fontName = document.getElementById('configFontName') ? document.getElementById('configFontName').value : 'Helvetica';
+                    const fontSize = document.getElementById('configFontSize') ? document.getElementById('configFontSize').value : '10';
+                    const isBold = document.getElementById('configFontBold') ? document.getElementById('configFontBold').checked : false;
+                    const isItalic = document.getElementById('configFontItalic') ? document.getElementById('configFontItalic').checked : false;
+                    const isUnderline = document.getElementById('configFontUnderline') ? document.getElementById('configFontUnderline').checked : false;
+                    labelEl.textContent = p.label;
+                    labelEl.style.position = 'absolute';
+                    labelEl.style.left = `calc(${p.xPct}% + 12px)`;
+                    labelEl.style.top = `calc(${p.yPct}% - 10px)`;
+                    labelEl.style.zIndex = 11;
+                    labelEl.style.pointerEvents = 'none';
+                    labelEl.style.fontFamily = fontName;
+                    labelEl.style.fontSize = fontSize + 'pt';
+                    labelEl.style.fontWeight = isBold ? '700' : '400';
+                    labelEl.style.fontStyle = isItalic ? 'italic' : 'normal';
+                    labelEl.style.textDecoration = isUnderline ? 'underline' : 'none';
+                    labelEl.style.background = 'rgba(255,255,255,0.6)';
+                    labelEl.style.padding = '1px 4px';
+                    labelEl.style.borderRadius = '3px';
+                    overlay.appendChild(labelEl);
+                } catch (e) {
+                    console.warn('Error aplicando estilos en marcadores', e);
+                }
+
+                const li = document.createElement('li'); li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.textContent = p.label + ' (' + p.xPct + '%, ' + p.yPct + '%)';
+                const btns = document.createElement('div');
+                const btnDel = document.createElement('button'); btnDel.className = 'btn btn-sm btn-outline-danger'; btnDel.textContent = 'Eliminar';
+                btnDel.onclick = function(){ if(confirm('Eliminar marcador?')){ modeloConfig.posiciones.splice(idx,1); renderMarkers(); } };
+                btns.appendChild(btnDel);
+                li.appendChild(btns);
+                lista.appendChild(li);
+            });
+        }
+
+        document.getElementById('guardarConfigBtn').addEventListener('click', function(){
+            const empId = document.getElementById('selectedEmpresaId').value;
+            if (!empId) { alert('Empresa no seleccionada'); return; }
+            // Enviar via fetch
+            const fd = new FormData();
+            fd.append('empresa_id', empId);
+            fd.append('posiciones', JSON.stringify(modeloConfig.posiciones));
+            // Adjuntar archivo directamente desde el input por si no se guardó en modeloConfig
+            const fileInput = document.getElementById('configModeloFile');
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                fd.append('modelo_pdf_file', fileInput.files[0]);
+            }
+            // Adjuntar configuración de modelo (ancho, fuente, tamaño)
+            const pageWidth = document.getElementById('configPageWidth') ? document.getElementById('configPageWidth').value : '';
+            const fontName = document.getElementById('configFontName') ? document.getElementById('configFontName').value : '';
+            const fontSize = document.getElementById('configFontSize') ? document.getElementById('configFontSize').value : '';
+            if (pageWidth) fd.append('page_width_mm', pageWidth);
+            if (fontName) fd.append('font_name', fontName);
+            if (fontSize) fd.append('font_size', fontSize);
+            // Adjuntar opciones de estilo
+            const fontBold = document.getElementById('configFontBold') ? (document.getElementById('configFontBold').checked ? '1' : '0') : '0';
+            const fontItalic = document.getElementById('configFontItalic') ? (document.getElementById('configFontItalic').checked ? '1' : '0') : '0';
+            const fontUnderline = document.getElementById('configFontUnderline') ? (document.getElementById('configFontUnderline').checked ? '1' : '0') : '0';
+            fd.append('font_bold', fontBold);
+            fd.append('font_italic', fontItalic);
+            fd.append('font_underline', fontUnderline);
+
+            fetch('save_modelo_posiciones.php', { method: 'POST', body: fd })
+                .then(async r => {
+                    let json;
+                    try { json = await r.json(); } catch(e) { throw new Error('Respuesta inválida del servidor'); }
+                    return json;
+                })
+                .then(resp => {
+                    if (resp.success) {
+                        alert('Configuración guardada.');
+                        // actualizar modelo en UI
+                        modeloConfig.modelo_file = resp.modelo_file || modeloConfig.modelo_file;
+                        if (modeloConfig.modelo_file) {
+                            document.getElementById('pdfPreview').src = 'pdfmodelo/' + modeloConfig.modelo_file;
+                        }
+                        // cerrar modal
+                        const mdl = bootstrap.Modal.getInstance(document.getElementById('configModeloModal'));
+                        if (mdl) mdl.hide();
+                    } else {
+                        alert('Error al guardar: ' + (resp.error || 'desconocido'));
+                    }
+                })
+                .catch(e => { console.error(e); alert('Error al guardar configuración: ' + (e.message || e)); });
+        });
+
+        // Cargar configuración del servidor
+        function loadModeloConfig(empresaId){
+            fetch('get_modelo_posiciones.php?empresa_id=' + encodeURIComponent(empresaId))
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success) {
+                        modeloConfig.posiciones = data.posiciones || [];
+                        modeloConfig.modelo_file = data.modelo_file || '';
+                        // Cargar configuración específica (ancho, fuente, tamaño)
+                        if (data.modelo_config) {
+                            const cfg = data.modelo_config;
+                            if (document.getElementById('configPageWidth')) document.getElementById('configPageWidth').value = cfg.page_width_mm || '80';
+                            if (document.getElementById('configFontName')) document.getElementById('configFontName').value = cfg.font_name || 'Helvetica';
+                            if (document.getElementById('configFontSize')) document.getElementById('configFontSize').value = cfg.font_size ? String(cfg.font_size) : '10';
+                            // Estilos: negrita, cursiva, subrayado
+                            if (document.getElementById('configFontBold')) document.getElementById('configFontBold').checked = (cfg.font_bold === '1' || cfg.font_bold === 1 || cfg.font_bold === true);
+                            if (document.getElementById('configFontItalic')) document.getElementById('configFontItalic').checked = (cfg.font_italic === '1' || cfg.font_italic === 1 || cfg.font_italic === true);
+                            if (document.getElementById('configFontUnderline')) document.getElementById('configFontUnderline').checked = (cfg.font_underline === '1' || cfg.font_underline === 1 || cfg.font_underline === true);
+                        }
+                        // Mostrar archivo
+                        if (modeloConfig.modelo_file) {
+                            const src = 'pdfmodelo/' + modeloConfig.modelo_file;
+                            document.getElementById('pdfPreview').src = src;
+                        } else {
+                            document.getElementById('pdfPreview').src = '';
+                        }
+                        renderMarkers();
+                    } else {
+                        // no hay configuración
+                        modeloConfig.posiciones = [];
+                        modeloConfig.modelo_file = '';
+                        document.getElementById('pdfPreview').src = '';
+                        renderMarkers();
+                    }
+                })
+                .catch(e => { console.error('Error cargando config', e); });
+        }
+    </script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.0/dist/JsBarcode.all.min.js"></script>
@@ -1684,6 +2006,10 @@ if (!isset($_SESSION['usuario_id'])) {
                     document.getElementById('displayFechaVencimientoCAI').textContent = empresa.fecha_vencimiento_cai;
 
                     empresaModal.hide();
+                    // Cargar configuración del modelo (si existe) al seleccionar empresa
+                    if (typeof loadModeloConfig === 'function') {
+                        try { loadModeloConfig(empresa.id); } catch(e) { console.warn('loadModeloConfig error', e); }
+                    }
                 })
                 .catch(error => console.error('Error al seleccionar empresa:', error));
         }
