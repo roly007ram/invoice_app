@@ -159,54 +159,28 @@ if (!isset($_SESSION['usuario_id'])) {
             </div>
 
     <div class="row mt-3">
-        <div class="col-md-3">
-            <button class="btn btn-success btn-sm w-100" onclick="nuevaFactura()">
-                <i class="fas fa-plus"></i> Nueva Factura
+    <div class="col-md-12">
+        <div class="dropdown">
+            <button class="btn btn-primary dropdown-toggle w-100" type="button" id="menuAcciones" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-bars"></i> Menú de Acciones
             </button>
-        </div>
-        <div class="col-md-3">
-            <button type="button" class="btn btn-outline-success btn-sm w-100" id="btnCuentaCorriente" onclick="abrirCuentaCorrienteModal()">
-                <i class="fas fa-exchange-alt"></i> Cuenta Corriente
-            </button>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-primary btn-sm w-100" type="submit" form="invoiceForm" name="guardar">
-                <i class="fas fa-save"></i> Guardar
-            </button>
-        </div>
-        <div class="col-md-3">
-            <button class="btn btn-info btn-sm w-100 no-print" onclick="imprimirFactura()">
-                <i class="fas fa-print"></i> Imprimir
-            </button>
+            <ul class="dropdown-menu w-100" aria-labelledby="menuAcciones">
+                <li><button class="dropdown-item" type="button" onclick="nuevaFactura()"><i class="fas fa-plus"></i> Nueva Factura</button></li>
+                <li><button class="dropdown-item" type="button" id="btnCuentaCorriente" onclick="abrirCuentaCorrienteModal()"><i class="fas fa-exchange-alt"></i> Cuenta Corriente</button></li>
+                <li><button class="dropdown-item" type="submit" form="invoiceForm" name="guardar"><i class="fas fa-save"></i> Guardar</button></li>
+                <li><button class="dropdown-item" type="button" onclick="openBackupManager()"><i class="fas fa-database"></i> Gestionar Copias</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item no-print" type="button" onclick="imprimirFactura()"><i class="fas fa-print"></i> Imprimir</button></li>
+                <li><button class="dropdown-item no-print" type="button" onclick="exportarPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></li>
+                <li><button class="dropdown-item no-print" type="button" onclick="imprimirTique80mm()"><i class="fas fa-receipt"></i> Imprimir Tique 80mm</button></li>
+                <li><button class="dropdown-item no-print" type="button" onclick="imprimirTique80mmSinQR()"><i class="fas fa-receipt"></i> Imprimir Tique 80mm (texto)</button></li>
+                <li><button class="dropdown-item no-print" type="button" onclick="exportarPDF()"><i class="fas fa-file-pdf"></i> Imprimir por modelo</button></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><button class="dropdown-item no-print" type="button" data-bs-toggle="modal" data-bs-target="#configModeloModal"><i class="fas fa-cog"></i> Configuración de modelos</button></li>
+            </ul>
         </div>
     </div>
-            <div class="row mt-2">
-                <div class="col-6">
-                    <button class="btn btn-warning btn-sm w-100 no-print" onclick="exportarPDF()">
-                        <i class="fas fa-file-pdf"></i> Exportar PDF
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button class="btn btn-dark btn-sm w-100 no-print" onclick="imprimirTique80mm()">
-                        <i class="fas fa-receipt"></i> Imprimir Tique 80mm
-                    </button>
-                </div>
-                <div class="col-6">
-                    <button class="btn btn-secondary btn-sm w-100 no-print" onclick="imprimirTique80mmSinQR()">
-                        <i class="fas fa-receipt"></i> Imprimir Tique 80mm (texto)
-                    </button>
-                </div>
-                <div class="col-6 mt-2">
-                    <button class="btn btn-info btn-sm w-100 no-print" onclick="exportarPDF()">
-                        <i class="fas fa-file-pdf"></i> Imprimir por modelo
-                    </button>
-                </div>
-                <div class="col-6 mt-2">
-                    <button class="btn btn-secondary btn-sm w-100 no-print" data-bs-toggle="modal" data-bs-target="#configModeloModal">
-                        <i class="fas fa-cog"></i> Configuración de modelos
-                    </button>
-                </div>
-            </div>
+</div>
             <div class="mt-2">
             </div>
 
@@ -2770,6 +2744,9 @@ if (!isset($_SESSION['usuario_id'])) {
                          document.getElementById('displayFechaVencimientoCAI').textContent = '12/05/25';
                     }
 
+                    // For debugging purposes, log the entire factura object
+                    console.log("Datos completos de la factura recibidos:", data.factura);
+
                     // Populate client details if available (from linked client table or from facturas table)
                     if (data.factura.cliente_id) {
                          document.getElementById('selectedClienteId').value = data.factura.cliente_id;
@@ -2777,8 +2754,10 @@ if (!isset($_SESSION['usuario_id'])) {
                         document.getElementById('clienteDomicilio').value = data.factura.cliente_domicilio_db;
                         document.getElementById('localidad').value = data.factura.cliente_localidad_db;
                         document.getElementById('clienteCuit').value = data.factura.cliente_cuit_db;
-                        document.getElementById('clienteIva').value = data.factura.cliente_tipo_iva_db;
-                        document.getElementById('condicionVenta').value = data.factura.cliente_condicion_venta_default_db;
+                        
+                        console.log("Asignando (con cliente_id) -> clienteIva:", data.factura.cliente_iva, "| condicionVenta:", data.factura.condicion_venta);
+                        document.getElementById('clienteIva').value = data.factura.cliente_iva;
+                        document.getElementById('condicionVenta').value = data.factura.condicion_venta;
                     } else {
                         // If no client_id, use the values saved directly in the facturas table (for older invoices or manually entered)
                         document.getElementById('selectedClienteId').value = '';
@@ -2786,6 +2765,8 @@ if (!isset($_SESSION['usuario_id'])) {
                         document.getElementById('clienteDomicilio').value = data.factura.cliente_domicilio;
                         document.getElementById('localidad').value = data.factura.localidad;
                         document.getElementById('clienteCuit').value = data.factura.cliente_cuit;
+
+                        console.log("Asignando (sin cliente_id) -> clienteIva:", data.factura.cliente_iva, "| condicionVenta:", data.factura.condicion_venta);
                         document.getElementById('clienteIva').value = data.factura.cliente_iva;
                         document.getElementById('condicionVenta').value = data.factura.condicion_venta;
                     }
@@ -3156,7 +3137,152 @@ function exportarEmpresasExcel() {
         document.body.appendChild(script);
     }
 }
-    </script>
-
-</body>
-</html>
+    function openBackupManager() {
+        const backupModal = new bootstrap.Modal(document.getElementById('backupManagerModal'));
+        backupModal.show();
+        loadBackups();
+    }
+    
+    function loadBackups() {
+        const tbody = document.getElementById('backupListBody');
+        const loadingIndicator = document.getElementById('backupLoadingIndicator');
+        tbody.innerHTML = '';
+        loadingIndicator.style.display = 'block';
+    
+        fetch('backup_manager.php?action=list')
+            .then(response => response.json())
+            .then(data => {
+                loadingIndicator.style.display = 'none';
+                if (data.success && data.backups.length > 0) {
+                    data.backups.forEach(backup => {
+                        const tr = document.createElement('tr');
+                        const sizeMB = (backup.size / 1024 / 1024).toFixed(2);
+                        const date = new Date(backup.date * 1000).toLocaleString();
+    
+                        tr.innerHTML = `
+                            <td>${backup.filename}</td>
+                            <td>${sizeMB} MB</td>
+                            <td>${date}</td>
+                            <td>
+                                <a href="backup_manager.php?action=download&file=${backup.filename}" class="btn btn-success btn-sm" title="Descargar">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                <button class="btn btn-danger btn-sm" title="Eliminar" onclick="deleteBackup('${backup.filename}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center">No hay copias de seguridad.</td></tr>';
+                }
+            })
+            .catch(error => {
+                loadingIndicator.style.display = 'none';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error al cargar la lista de copias.</td></tr>';
+                console.error('Error loading backups:', error);
+            });
+    }
+    
+    function deleteBackup(filename) {
+        if (!confirm(`¿Está seguro de que desea eliminar permanentemente la copia de seguridad "${filename}"?`)) {
+            return;
+        }
+    
+        fetch(`backup_manager.php?action=delete&file=${filename}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadBackups(); // Refresh the list
+                } else {
+                    alert('Error al eliminar: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting backup:', error);
+                alert('Ocurrió un error en la comunicación con el servidor.');
+            });
+    }
+    
+    function crearNuevoBackup() {
+        const createButton = document.getElementById('crearBackupBtn');
+        const originalText = createButton.innerHTML;
+        
+        if (!confirm('Se creará una nueva copia de seguridad completa. Esto puede tardar varios minutos. ¿Desea continuar?')) {
+            return;
+        }
+    
+        createButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando copia...';
+        createButton.disabled = true;
+    
+        fetch('backup_manager.php?action=create')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error de red o el servidor devolvió un estado HTTP no exitoso. Código: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message + '\n\n' + data.details);
+                    loadBackups(); // Refresh the list
+                } else {
+                    alert('Error al crear la copia de seguridad:\n' + data.message + '\n\nDetalles:\n' + data.details);
+                }
+            })
+            .catch(error => {
+                console.error('Error en fetch al crear el backup:', error);
+                alert('Ocurrió un error inesperado al crear la copia de seguridad. Verifique la consola del navegador para más detalles.');
+            })
+            .finally(() => {
+                createButton.innerHTML = originalText;
+                createButton.disabled = false;
+            });
+    }
+        </script>
+    
+    <!-- Backup Manager Modal -->
+    <div class="modal fade" id="backupManagerModal" tabindex="-1" aria-labelledby="backupManagerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="backupManagerModalLabel"><i class="fas fa-database"></i> Gestionar Copias de Seguridad</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <button class="btn btn-primary" id="crearBackupBtn" onclick="crearNuevoBackup()">
+                            <i class="fas fa-plus"></i> Crear Nueva Copia de Seguridad
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="loadBackups()">
+                            <i class="fas fa-sync-alt"></i> Refrescar Lista
+                        </button>
+                    </div>
+                    <table class="table table-striped" id="backupListTable">
+                        <thead>
+                            <tr>
+                                <th>Archivo</th>
+                                <th>Tamaño</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backupListBody">
+                            <!-- Backup list will be loaded here -->
+                        </tbody>
+                    </table>
+                    <div id="backupLoadingIndicator" style="display: none;" class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    </body>
+    </html>

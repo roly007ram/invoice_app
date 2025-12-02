@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";
 $username = "root";
-$password = "Noraan007*";
+$password = "";
 $dbname = "invoice_app";
 
 // Create connection
