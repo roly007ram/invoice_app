@@ -1,0 +1,107 @@
+[2025-12-02 02:52:56] --- New request to guardar_factura.php ---
+[2025-12-02 02:52:56] Array
+(
+    [guardar] => 
+    [empresaId] => 8
+    [clienteId] => 17
+    [numeroFactura] => 00014-00008153
+    [empresaCuit] => 30-68786852-4
+    [empresaIB] => 30-68786852-4
+    [inicioActividad] => 
+    [clienteNombre] => roly
+    [clienteDomicilio] => vila cabello
+    [fecha] => 2025-12-02
+    [localidad] => posads
+    [clienteIva] => Resp. Inscripto
+    [clienteCuit] => 20247012754
+    [condicionVenta] => Cheque
+    [cantidad] => Array
+        (
+            [0] => 1
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+    [detalle] => Array
+        (
+            [0] => Aceite Helix Ultra 5w40 Sintetico 209L
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+    [precio_unitario] => Array
+        (
+            [0] => 1597304.00
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+)
+
+[2025-12-02 02:52:56] Main invoice inserted successfully. ID: 190
+[2025-12-02 02:52:56] Attempting to update puestoynumcompro for empresaId: 8 with numeroFactura: 00014-00008153
+[2025-12-02 02:52:56] UPDATE SUCCEEDED for empresaId: 8. Affected rows: 1
+[2025-12-02 02:52:57] Movimiento de cuenta corriente created successfully.
+[2025-12-02 02:52:57] All items inserted. Committing transaction.
+[2025-12-02 02:56:25] --- New request to guardar_factura.php ---
+[2025-12-02 02:56:25] Array
+(
+    [guardar] => 
+    [empresaId] => 15
+    [clienteId] => 17
+    [numeroFactura] => 0001-00123621
+    [empresaCuit] => 30-67241590-6
+    [empresaIB] => 30672415906
+    [inicioActividad] => 14/10/1994
+    [clienteNombre] => roly
+    [clienteDomicilio] => vila cabello
+    [fecha] => 2025-12-02
+    [localidad] => posads
+    [clienteIva] => Resp. Inscripto
+    [clienteCuit] => 20247012754
+    [condicionVenta] => Contado
+    [cantidad] => Array
+        (
+            [0] => 1
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+    [detalle] => Array
+        (
+            [0] => Arena En Bolson X 900kg
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+    [precio_unitario] => Array
+        (
+            [0] => 35000.00
+            [1] => 
+            [2] => 
+            [3] => 
+            [4] => 
+            [5] => 
+        )
+
+)
+
+[2025-12-02 02:56:25] Main invoice inserted successfully. ID: 191
+[2025-12-02 02:56:25] Attempting to update puestoynumcompro for empresaId: 15 with numeroFactura: 0001-00123621
+[2025-12-02 02:56:25] UPDATE SUCCEEDED for empresaId: 15. Affected rows: 0
+[2025-12-02 02:56:25] All items inserted. Committing transaction.

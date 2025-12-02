@@ -95,6 +95,8 @@ try {
 
             $fecha_vencimiento_cai = !empty($_POST['fecha_vencimiento_cai']) ?
                 mysqli_real_escape_string($conn, $_POST['fecha_vencimiento_cai']) : null;
+            
+            $puestoynumcompro = mysqli_real_escape_string($conn, $_POST['puestoynumcompro'] ?? '');
 
             // Log de las fechas para debugging
             log_error('Fechas procesadas:', [
@@ -133,7 +135,8 @@ try {
                 registradora_fiscal=?,
                 codigo_barra_cai=?,
                 fecha_vencimiento_cai=NULLIF(?, ''),
-                modelo_pdf=?
+                modelo_pdf=?,
+                puestoynumcompro=?
                 WHERE id=?";
 
             $stmt = $conn->prepare($sql);
@@ -144,7 +147,7 @@ try {
                 exit;
             }
             // Vincula los parámetros a la consulta de actualización
-            if (!$stmt->bind_param("sssssssssssssi",
+            if (!$stmt->bind_param("ssssssssssssssi",
                 $nombre,
                 $direccion,
                 $codigo_postal,
@@ -158,6 +161,7 @@ try {
                 $codigo_barra_cai,
                 $fecha_vencimiento_cai,
                 $modelo_pdf_path,
+                $puestoynumcompro,
                 $id
             )) {
                 log_error('Error en bind_param (UPDATE):', $stmt->error);
@@ -182,14 +186,9 @@ try {
                 registradora_fiscal,
                 codigo_barra_cai,
                 fecha_vencimiento_cai,
-                modelo_pdf
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?,
-                NULLIF(?, ''),
-                ?, ?,
-                NULLIF(?, ''),
-                ?
-            )";
+                modelo_pdf,
+                puestoynumcompro
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
@@ -199,7 +198,7 @@ try {
                 exit;
             }
             // Vincula los parámetros a la consulta de inserción
-            if (!$stmt->bind_param("sssssssssssss",
+            if (!$stmt->bind_param("ssssssssssssss",
                 $nombre,
                 $direccion,
                 $codigo_postal,
@@ -212,7 +211,8 @@ try {
                 $registradora_fiscal,
                 $codigo_barra_cai,
                 $fecha_vencimiento_cai,
-                $modelo_pdf_path
+                $modelo_pdf_path,
+                $puestoynumcompro
             )) {
                 log_error('Error en bind_param (INSERT):', $stmt->error);
                 echo json_encode(['success' => false, 'error' => 'bind_param failed: ' . $stmt->error]);

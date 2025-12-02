@@ -481,6 +481,7 @@ if (!isset($_SESSION['usuario_id'])) {
                             <div class="mb-3"><label>Registradora Fiscal:</label><input type="text" class="form-control form-control-sm" id="empresaRegistradoraFiscalCrud" name="registradora_fiscal"></div>
                             <div class="mb-3"><label>Código Barra CAI:</label><input type="text" class="form-control form-control-sm" id="empresaCodigoBarraCaiCrud" name="codigo_barra_cai"></div>
                             <div class="mb-3"><label>Fecha Vencimiento CAI:</label><input type="date" class="form-control form-control-sm" id="empresaFechaVencimientoCaiCrud" name="fecha_vencimiento_cai"></div>
+                            <div class="mb-3"><label>Puesto y Nro. Comprobante:</label><input type="text" class="form-control form-control-sm" id="empresaPuestoynumcomproCrud" name="puestoynumcompro"></div>
                             <div class="mb-3">
                                 <label>Modelo PDF:</label>
                                 <input type="file" class="form-control form-control-sm" id="empresaModeloPdfCrud" name="modelo_pdf" accept="application/pdf">
@@ -1979,6 +1980,10 @@ if (!isset($_SESSION['usuario_id'])) {
                     document.getElementById('displayRegistradoraFiscal').textContent = empresa.registradora_fiscal;
                     document.getElementById('displayFechaVencimientoCAI').textContent = empresa.fecha_vencimiento_cai;
 
+                    if (empresa.puestoynumcompro) {
+                        document.getElementById('numeroFactura').value = empresa.puestoynumcompro;
+                    }
+
                     empresaModal.hide();
                     // Cargar configuración del modelo (si existe) al seleccionar empresa
                     if (typeof loadModeloConfig === 'function') {
@@ -2008,6 +2013,7 @@ if (!isset($_SESSION['usuario_id'])) {
                     document.getElementById('empresaRegistradoraFiscalCrud').value = empresa.registradora_fiscal;
                     document.getElementById('empresaCodigoBarraCaiCrud').value = empresa.codigo_barra_cai;
                     document.getElementById('empresaFechaVencimientoCaiCrud').value = empresa.fecha_vencimiento_cai;
+                    document.getElementById('empresaPuestoynumcomproCrud').value = empresa.puestoynumcompro;
                     document.getElementById('modelo_pdf_actual').value = empresa.modelo_pdf;
                     // Tipo de factura
                     document.getElementById('empresaTipoFacCrud').value = empresa.tipo_fac || '';
