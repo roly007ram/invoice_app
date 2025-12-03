@@ -49,7 +49,7 @@ if ($result) {
                 </div>
             </div>
             <button type="submit" class="btn btn-primary" onclick="setTarget('pdf')">Generar PDF</button>
-            <button type="submit" class="btn btn-success" onclick="setTarget('excel')">Generar Excel</button>
+            <button type="submit" class="btn btn-info" onclick="setTarget('csv')">Generar CSV</button>
             <a href="index.php" class="btn btn-secondary">Volver</a>
         </form>
     </div>
@@ -60,8 +60,8 @@ if ($result) {
             if (format === 'pdf') {
                 form.action = 'generar_informe_pdf.php';
                 form.target = '_blank';
-            } else if (format === 'excel') {
-                form.action = 'generar_informe_excel.php';
+            } else if (format === 'csv') {
+                form.action = 'generar_informe_csv.php';
                 form.target = '_self'; // O '_blank' si prefieres
             }
         }

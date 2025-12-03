@@ -169,6 +169,7 @@ if (!isset($_SESSION['usuario_id'])) {
                 <li><button class="dropdown-item" type="button" id="btnCuentaCorriente" onclick="abrirCuentaCorrienteModal()"><i class="fas fa-exchange-alt"></i> Cuenta Corriente</button></li>
                 <li><button class="dropdown-item" type="submit" form="invoiceForm" name="guardar"><i class="fas fa-save"></i> Guardar</button></li>
                 <li><button class="dropdown-item" type="button" onclick="openBackupManager()"><i class="fas fa-database"></i> Gestionar Copias</button></li>
+                <li><a class="dropdown-item" href="reporte_cliente.php"><i class="fas fa-chart-bar"></i> Informe por Cliente</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><button class="dropdown-item no-print" type="button" onclick="imprimirFactura()"><i class="fas fa-print"></i> Imprimir</button></li>
                 <li><button class="dropdown-item no-print" type="button" onclick="exportarPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button></li>

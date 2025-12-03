@@ -36,6 +36,7 @@ $sql = "SELECT
             f.numero_factura,
             f.fecha, 
             f.subtotal,
+            f.iva,
             f.total AS total_factura,
             i.cantidad, 
             i.detalle, 
@@ -66,6 +67,7 @@ while ($row = $result->fetch_assoc()) {
                 'empresa_cuit' => $row['empresa_cuit'],
                 'fecha' => $row['fecha'],
                 'subtotal' => $row['subtotal'],
+                'iva' => $row['iva'],
                 'total_factura' => $row['total_factura'],
             ],
             'items' => []
@@ -168,7 +170,10 @@ if (empty($facturas)) {
         $pdf->Cell(array_sum(array_slice($w, 0, 7)), 6, 'Sub-Total Factura:', 'LR', 0, 'R');
         $pdf->Cell($w[7], 6, number_format($info['subtotal'], 2, ',', '.'), 'LR', 1, 'R');
         
-        $pdf->Cell(array_sum(array_slice($w, 0, 7)), 6, 'TOTAL Factura (c/IVA):', 'LRB', 0, 'R');
+        $pdf->Cell(array_sum(array_slice($w, 0, 7)), 6, 'IVA:', 'LR', 0, 'R');
+        $pdf->Cell($w[7], 6, number_format($info['iva'], 2, ',', '.'), 'LR', 1, 'R');
+
+        $pdf->Cell(array_sum(array_slice($w, 0, 7)), 6, 'TOTAL Factura:', 'LRB', 0, 'R');
         $pdf->Cell($w[7], 6, number_format($info['total_factura'], 2, ',', '.'), 'LRB', 1, 'R');
         $pdf->SetFont('Arial', '', 8);
         $pdf->Ln(5); // Space between invoices
